@@ -16,7 +16,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--cuda', type = bool, default=True, help='Use CUDA for training.')
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
 parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs to train.')
-parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
+parser.add_argument('--lr', type=float, default=0.01, help='Learning rate.')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
 parser.add_argument('--hidden_1', type=int, default=200, help='Number of hidden units of Network_1.')
 parser.add_argument('--dropout_1', type=float, default=0.3, help='Dropout rate of Network_1.')
@@ -28,7 +28,7 @@ parser.add_argument('--dataset', type=str, default='cora', help = 'Dataset: cora
 parser.add_argument('--public', type = int, default = 0, help = '1 for 20 pre class and 0 for label rate')
 parser.add_argument('--fastmode', type=str, default='False', help='Use validation set or not.')
 parser.add_argument('--percent', type=float, default=0.005, help='Label rate.')
-parser.add_argument('--patience', type=int, default=200, help='Patience for early stop.')
+parser.add_argument('--patience', type=int, default=100, help='Patience for early stop.')
 parser.add_argument('--t1', type=int, default=200, help='First step pseudo label.')
 parser.add_argument('--t2', type=int, default=300, help='Second step pseudo label.')
 parser.add_argument('--t3', type=int, default=400, help='Third step pseudo label.')
@@ -40,6 +40,9 @@ args = parser.parse_args()
 args.cuda = args.cuda and torch.cuda.is_available()
 print("Parameter settings:",args)
 
+# 0.005 cora  ------------- 0.01 5e-5 200 75.25
+# 0.01 cora ----------------0.01 5e-4 100 77.24
+# 0.03  cora  ------------- 0.01 5e-4 100 83.27
 np.random.seed(args.seed)
 torch.manual_seed(args.seed)
 if args.cuda:
