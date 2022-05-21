@@ -10,7 +10,7 @@ See [minipaper](https://github.com/zhaimingshuzms/modified_VCLN/blob/main/doc/pa
 
 3.VCHN-bagging
 
-The code is mainly based on [VCHN]("[kunzhan/VCHN: TCyb 2022: View-Consistent Heterogeneous Network (github.com)](https://github.com/kunzhan/VCHN)").
+The code is mainly based on [VCHN](https://github.com/kunzhan/VCHN).
 
 Also,author uses [Snowball and Krylov](https://github.com/PwnerHarry/Stronger_GCN) for reference.
 
