@@ -43,6 +43,7 @@ print("Parameter settings:",args)
 # 0.005 cora  ------------- 0.01 5e-5 200 75.25
 # 0.01 cora ----------------0.01 5e-4 100 77.24
 # 0.03  cora  ------------- 0.01 5e-4 100 83.27
+# python train.py --dataset cora --percent 0.5 --t1 180 --t2 280 --k 5 90.66% 90.23% 90.78%
 np.random.seed(args.seed)
 torch.manual_seed(args.seed)
 if args.cuda:
