@@ -82,7 +82,8 @@ class modified_GVCLN_snowball(graph_convolutional_network):
             else:
                 list_output_blocks.append(F.dropout(self.activation(layer(torch.cat([x] + list_output_blocks[0: layer_num], 1), adj)), self.dropout, training=self.training))
         output = self.out(torch.cat([x] + list_output_blocks, 1), adj, eye=False)
-        y = F.log_softmax(output,dim=1)
+        # y = F.log_softmax(output,dim=1)
+        y = output
         semi_loss_1 = torch.nn.CrossEntropyLoss()(y[idx_train], labels[idx_train])
 
         z = F.dropout(x, self.dropout_2, training=self.training)

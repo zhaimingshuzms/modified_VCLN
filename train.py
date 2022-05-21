@@ -16,21 +16,22 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--cuda', type = bool, default=True, help='Use CUDA for training.')
 parser.add_argument('--seed', type=int, default=42, help='Random seed.')
 parser.add_argument('--epochs', type=int, default=2000, help='Number of epochs to train.')
-parser.add_argument('--lr', type=float, default=0.01, help='Learning rate.')
+parser.add_argument('--lr', type=float, default=0.001, help='Learning rate.')
 parser.add_argument('--weight_decay', type=float, default=5e-4, help='Weight decay (L2 loss on parameters).')
 parser.add_argument('--hidden_1', type=int, default=200, help='Number of hidden units of Network_1.')
-parser.add_argument('--dropout_1', type=float, default=0.19567, help='Dropout rate of Network_1.')
+parser.add_argument('--dropout_1', type=float, default=0.3, help='Dropout rate of Network_1.')
 parser.add_argument('--hidden_2', type=int, default=16, help='Number of hidden units of Network_2.')
 parser.add_argument('--nb_heads_2',type=int, default=3, help='Number of head of Network_2.')
 parser.add_argument('--dropout_2', type=float, default=0.6, help='Dropout rate of Network_2.')
 parser.add_argument('--alpha_2', type=float, default=0.2, help='Alpha for the leaky_relu of Network_2.')
 parser.add_argument('--dataset', type=str, default='cora', help = 'Dataset: cora or citeseer or pubmed')
 parser.add_argument('--public', type = int, default = 0, help = '1 for 20 pre class and 0 for label rate')
-parser.add_argument('--fastmode', type=bool, default=True, help='Use validation set or not.')
+parser.add_argument('--fastmode', type=str, default='False', help='Use validation set or not.')
 parser.add_argument('--percent', type=float, default=0.005, help='Label rate.')
-parser.add_argument('--patience', type=int, default=100, help='Patience for early stop.')
+parser.add_argument('--patience', type=int, default=200, help='Patience for early stop.')
 parser.add_argument('--t1', type=int, default=200, help='First step pseudo label.')
 parser.add_argument('--t2', type=int, default=300, help='Second step pseudo label.')
+parser.add_argument('--t3', type=int, default=400, help='Third step pseudo label.')
 parser.add_argument('--k', type=int, default=15, help='RNM filter parameter.') 
 # my add argument
 parser.add_argument('--layers', type=int, default=8, help='Number of hidden layers, i.e. network depth')
@@ -52,6 +53,7 @@ def Graph_pseudo(adj, features, labels, idx_train, idx_val, idx_test):
 	if args.use_GVCLN:
 		args.hidden_1=16
 		args.dropout_1=0.5
+		args.lr=0.01
 		print("use GVCLN")
 		model = GVCLN(nfeat=features.shape[1], nclass=labels.max().item() + 1, nhid_1=args.hidden_1, \
 				  dropout_1=args.dropout_1, nhid_2=args.hidden_2, dropout_2=args.dropout_2, alpha_2=args.alpha_2, \
@@ -100,7 +102,7 @@ def Graph_pseudo(adj, features, labels, idx_train, idx_val, idx_test):
 		model.eval()
 		model_one_output, model_two_output, loss_11, loss_21, loss_12, loss_22 = model(features, adj, idx_train, labels)
 		#Validation
-		if not args.fastmode:
+		if args.fastmode=="False":
 			model_one_val = accuracy(F.softmax(model_one_output[idx_val], 1), labels[idx_val])
 			model_two_val = accuracy(F.softmax(model_two_output[idx_val], 1), labels[idx_val])
 			model_one_test = accuracy(F.softmax(model_one_output[idx_test], 1), labels[idx_test])
@@ -126,15 +128,25 @@ def Graph_pseudo(adj, features, labels, idx_train, idx_val, idx_test):
 				best_acc = best_acc_1
 			else :
 				best_acc = best_acc_2
+			
+				# save model
 
 			print("\r\rEpoch:%04d || " % epoch, "Val_acc_one:%5.4f%% || " % (model_one_val.item()*100), \
 				 "Val_acc_two:%5.4f%% || " % (model_two_val.item()*100), \
 				 "Best_acc:%5.4f%% || " % (best_acc*100), "Pseudo_labels:%04d || " % num, \
-				 "Bad_counter:%02d" % bad_counter, end='')
+				 "Bad_counter:%02d" % bad_counter,
+				 end='')
+			
+			
 
 			if bad_counter >= args.patience and t == args.t1 :
 				bad_counter = 0
 				t = args.t2
+			
+			if bad_counter >= args.patience and t == args.t2:
+				bad_counter = 0
+				t = args.t3
+
 			if bad_counter >= args.patience :
 				break
 
@@ -159,15 +171,23 @@ def Graph_pseudo(adj, features, labels, idx_train, idx_val, idx_test):
 				bad_counter += 1
 
 			best_acc = best_acc_2
-
+			
 			print("\r\rEpoch:%04d || " % epoch, "Train_acc_one:%5.4f%% || " % (train_acc1.item()*100), \
 				 "Train_acc_two:%5.4f%% || " % (train_acc2.item()*100), \
 				 "Best_acc:%5.4f%% || " % (best_acc*100), "Pseudo_labels:%04d || " % num, \
-				 "Bad_counter:%02d" % bad_counter, end='')
+				 "Bad_counter:%02d" % bad_counter, 
+				 end='')
+
+
 
 			if bad_counter >= args.patience and t == args.t1 :
 				bad_counter=0
 				t = args.t2
+
+			if bad_counter >= args.patience and t == args.t2:
+				bad_counter = 0
+				t = args.t3
+
 			if bad_counter >= args.patience :
 				break
 		
@@ -176,7 +196,7 @@ def Graph_pseudo(adj, features, labels, idx_train, idx_val, idx_test):
 	model_one_testacc = accuracy(F.softmax(model_one_test_output[idx_test], 1), labels[idx_test])
 	model_two_testacc = accuracy(F.softmax(model_two_test_output[idx_test], 1), labels[idx_test])
 	
-	return model_one_testacc, model_two_testacc, best_acc
+	return model_one_testacc, model_two_testacc , best_acc
 
 def main():
 	acc1 = []
@@ -215,7 +235,7 @@ def main():
 	print("Validation set size:",len(idx_val))
 	print("Test set size:",len(idx_test))
 	print("Random seed:", seed)
-	print("Use validation:",not args.fastmode)
+	print("Fastmode:",args.fastmode)
 	print("Acc_all:",list(acc3))
 	print('Acc_mean:{:.2f}%'.format(mean_acc3*100))
 	print("*******************************************************************************************************")
