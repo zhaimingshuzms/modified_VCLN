@@ -1,0 +1,223 @@
+\documentclass{article}
+
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2022
+
+
+% ready for submission
+% \usepackage{neurips_2022}
+
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{neurips_2022}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+\usepackage[final]{neurips_2022}
+\usepackage{amsmath}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2022}
+
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+
+
+\title{VCHN with Snowball GCN Architechture}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{
+  Zhai Mingshu \\
+  Department of Computer Science\\
+  Shanghai Jiao Tong University\\ %\\
+  \texttt{zhaimingshuzms@sjtu.edu.cn} \\
+  % examples of more authors
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \AND
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+}
+
+
+\begin{document}
+
+
+\maketitle
+
+
+\begin{abstract}
+    View-Consistent Heterogeneous Network (VCHN) is a successful architechture of transductive learning on graph with
+    very few labeled data.It combines spectral view aggregation and spatial view aggregation.
+    The most common way to deploy spectral view aggregation is to use Graph Convolutional Network (GCN) and 
+    VCHN adapts it as well.My work is the changement of the original GCN architechture to snowball.
+\end{abstract}
+
+
+\section{Introduction}
+
+
+
+
+\subsection{Background}
+Transductive learning on graph aims to predict the labels of nodes.Transductive learning on graph with
+very few labeled data is even more challenging because the lack of supervision.
+VCHN \cite{VCHN} is one of the most successful architecture in this area.Its key idea is 
+designing the loss function based on the view consistency of different view.
+
+
+Snowball architechture of GCN is combine features of different layers like snowballing.
+The features of previous layers are concatenated together and multiplied by learnable parameter matrix.
+After the activation function,it turns into the input feature of the new layer.
+\subsection{Motivation}
+The original implementation of VCHN uses two GNN frameworks:GCN and GAT.
+In the standard implementation of VCHN \url{https://github.com/kunzhan/VCHN} ,
+a two layer basic GCN is implemented.
+
+
+If we use them all alone,the snowball architechture GCN performs better than basic GCN in this task.
+The idea is that we can replace the basic GCN with snowball GCN in ensemble learning to get better performance.
+
+\section{Related Works}
+\subsection{View-Consistent Heterogeneous Network}
+\paragraph{View Consistency}
+View-Consistent Heterogeneous Network is an ensemble learning model which use soft cross-entropy loss function
+to construct the consistency loss function between two views.
+\begin{equation}
+l_v=-\frac{1}{n} \sum_{i=1}^n \sum_{j=1}^k y_{ij}^{(2)} \ln y_{ij}^{(1)}
+\end{equation}
+Where $y_{ij}^{(1)}$ is the predictive probability of the spectral view
+of VCHN(GCN) and $y_{ij}^{(2)}$ is the predictive probability of the spatial view
+of VCHN(GAT).
+VCHN use adam optimizer to train super parameter and the goal is minimize overall loss 
+\begin{equation}
+l_{overall}=l_1+l_2+l_v
+\end{equation}
+Where $l_1$ is the sum of loss of the first model,including the loss on labeled data and pseudo data,so as $l_2$
+\paragraph{Graph Convolutional Network}
+Graph Convolutional Network (GCN) \cite{GCN} is the spectral view model VCHN used.
+We consider a multi-layer Graph Convolutional
+Network (GCN) with the following layer-wise propagation rule:
+\begin{equation}
+    H^{(l+1)}=\sigma(\hat{D}^{-\frac{1}{2}}\hat{A}\hat{D}^{-\frac{1}{2}}H^{(l)}W^{(l)})
+\end{equation}
+Here,$\hat{A}=A+I_n$ is sum of the adjacency matrix of undirected graph $G$ and the identity matrix $I$
+$\hat{D}^{-\frac{1}{2}}\hat{A}\hat{D}$ means row normalization.
+\paragraph{Graph Attention Network}
+Graph Attention Network (GAT) \cite{GAT} uses attention machanism to construct graph attentional layer.
+\begin{equation}
+    \alpha_{ij}=\frac{\exp ({\rm LeakyReLU} ( \vec{\alpha}^{T} [ \mathbf{W} \vec{h_i}||\mathbf{W}\vec{h_j} ]))}{\sum_{k \in \mathcal{N}(i)}\exp ({\rm LeakyReLU}( \vec{\alpha}^{T} [ \mathbf{W}\vec{h_i}||\mathbf{W} \vec{h_k} ]))}
+\end{equation}
+\begin{equation}
+    \vec{h_i}^{\prime}=\sigma(\sum_{j\in \mathcal{N}(i)} \alpha_{ij} \mathbf{W} \vec{h_j})
+\end{equation}
+VCHN performs multi-head attention so the layer is slightly different to it.
+\subsection{Snowball Architechture of GCN}
+Snowball architecture of GCN \cite{snowball} combines all previous layers' features to get the new layer's
+feature.This helps to get a richer representation for each node.
+\begin{equation}
+    \begin{aligned}
+    \mathbf{H_0} &= \mathbf{X} \quad
+    \mathbf{H_{l+1}}=f(L[H_0,\cdots,H_l]W_l),l=0,1,2,\cdots,n-1\\
+    C &=g([H_0,\cdots,H_n]W_n)\\
+    output &={\rm softmax} (L^p C W_C)
+    \end{aligned}
+\end{equation}
+Here,$L$ is the row normalized Laplace matrix,$H_i$ is the feature of $i$th layer,
+$W$ is the learnable parameter matrix and $f,g$ is the activation function.
+Snowball architecture is efficient because the primitive GCN finally generates
+a matrix with low rank if the number of layers increases to infinity.
+\section{Method}
+\subsection{The Changement of Hyperparameter}
+The primitive GCN that VCHN used has fixed two inner layers of convolution.
+Snowball architechture needs adaptive number of layers to enhance the ability of GCN,
+so a new hyperparameter "--layer" has been added to hyperparameter lists.
+
+Also we need lower learning rate and weight decay because the snowball GCN is more complex and
+needs to train longer.
+\subsection{Use Module List to Contain Multiple Layers}
+Snowball architechture needs adaptive number of layers so moudle list is used to contain 
+variable number of layers in a module.
+
+
+\section{Experiments}
+\subsection{Few Labeled Data}
+\begin{tabular}{ |p{3cm}||p{3cm}|p{3cm}|p{3cm}|  }
+    \hline
+    \multicolumn{4}{|c|}{Performance} \\
+    \hline
+    Dataset     & Cora 0.005 & Cora 0.01 &Cora 0.03\\
+    \hline
+    VCHN & 74.9\%   &81.3\%   &   83.1\%\\
+    Snowball(tanh) &  71.36\%   & 74.78\%   &80.72\% \\
+    GCN & 50.9\% & 63.3\%& 76.5\%\\
+    GAT    &41.4\% & 48.6\%&  56.8\%\\
+    VCHN-snowball &75.25\%   & 77.24\%& 83.27\% \\
+    Truncated Krylov & 74.89\% & 78.15\%& 81.92\% \\
+    \hline
+   \end{tabular}
+Due to the constraints of author's calculation device,only rough hyperparameters are available and the model's performance still has space to improve.
+To get similar performance of VCHN-snowball as the following figure,
+You need to use recommended hyperparameter in code \url{https://github.com/zhaimingshuzms/modified_VCLN}.
+The data of VCHN-snowball are all with validations and are the average accuracy of $10$ independent experiments with fixed random seed.
+
+\subsection{The Whole Cora Dataset}
+The Whole Cora Dataset can't be provided to VCHN-snowball directly because the lack of space of pseudo labels.
+Author provides $50\%$ labeled data to VCHN-snowball and gets an incredible high prediction accuracy.
+During $30$ independent experiments divided into $3$ partitions. 
+$90.66\%,90.23\%,90.78\%$ accuracies are acquired,which is close to or even better than the best model for Cora(SSP 90.16\%) \cite{SSP}
+
+The potential capacity of VCHN-snowball is huge because you can apply bagging technique on Cora dataset and send the data to 
+multiple VCHN-snowball models to get a even better performance.
+
+\section{Conclusion}
+\subsection{VCHN with Snowball GCN Architechture}
+In Cora 0.005\% and Cora 0.03\%,VCHN-snowball evinces the effection of snowball architechture to promote accuracy.
+
+
+VCHN-snowball is a potential effective model for the whole Cora dataset as well because it owns the capacity of right prediction using only a few data.
+\subsection{Further Exploration}
+Note that snowball GCN is not the best architechture of GCN and we can use Block Krylov Subspace Method to get better performance. \cite{snowball}
+The GAT network VCHN used is also a primitive GAT and can be improved by some tricks. \cite{tricks}
+
+
+VCHN is a method of ensemble learning and better basic model is hopefully to get a better ultimate VCHN model.
+\bibliographystyle{unsrt}
+\bibliography{ref}
+\end{document}
