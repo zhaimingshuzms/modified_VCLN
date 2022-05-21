@@ -1,6 +1,6 @@
 # This is a modified VCHN with snowball GCN Arch
 
-See doc/paper.pdf to get more information of VCHN-snowball
+See [minipaper](https://github.com/zhaimingshuzms/modified_VCLN/blob/main/doc/paper.pdf) to get more information of VCHN-snowball
 
 ## Potential Development
 
@@ -9,4 +9,10 @@ See doc/paper.pdf to get more information of VCHN-snowball
 2.VCHN-GAT-trick
 
 3.VCHN-bagging
+
+The code is mainly based on [VCHN]("[kunzhan/VCHN: TCyb 2022: View-Consistent Heterogeneous Network (github.com)](https://github.com/kunzhan/VCHN)").
+
+Also,author uses [Snowball and Krylov](https://github.com/PwnerHarry/Stronger_GCN) for reference.
+
+
 
